@@ -1,0 +1,3 @@
+(async () => {
+    // do stuff here
+})();
