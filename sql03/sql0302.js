@@ -12,48 +12,53 @@
 
     // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
     const questKeypair = Keypair.random()
-    const destinationKeypair = Keypair.random()
+    const sponsorKeypair = Keypair.random()
 
     // Optional: Log the keypair details if you want to save the information for later.
     console.log(`Quest Public Key: ${questKeypair.publicKey()}`);
     console.log(`Quest Secret Key: ${questKeypair.secret()}`);
-    console.log(`Destination Public Key: ${destinationKeypair.publicKey()}`);
-    console.log(`Destination Secret Key: ${destinationKeypair.secret()}`);
+    console.log(`Sponsor Public Key: ${sponsorKeypair.publicKey()}`);
+    console.log(`Sponsor Secret Key: ${sponsorKeypair.secret()}`);
 
-    // Fund both accounts using friendbot
-    await Promise.all([questKeypair, destinationKeypair].map(async (kp) => {
-        const friendbotUrl = `https://friendbot.stellar.org?addr=${kp.publicKey()}`;
-        let response = await fetch(friendbotUrl)
+    const friendbotUrl = `https://friendbot.stellar.org?addr=${sponsorKeypair.publicKey()}`;
+    let response = await fetch(friendbotUrl)
 
-        // // Optional: Looking at the responses from fetch
-        // let json = await response.json();
-        // console.log(json);
+    // // Optional: Looking at the responses from fetch
+    // let json = await response.json();
+    // console.log(json);
 
-        // Check that the response is OK, and give a confirmation message.
-        if (response.ok) {
-            console.log(`Account ${kp.publicKey()} successfully funded.`);
-        } else {
-            console.log(`Something went wrong funding account: ${kp.publicKey}.`);
-        }
-    }));
+    // Check that the response is OK, and give a confirmation message.
+    if (response.ok) {
+        console.log(`Account ${sponsorKeypair.publicKey()} successfully funded.`);
+    } else {
+        console.log(`Something went wrong funding account: ${sponsorKeypair.publicKey}.`);
+    }
 
     const server = new Server('https://horizon-testnet.stellar.org');
-    const questAccount = await server.loadAccount(questKeypair.publicKey());
+    const sponsorAccount = await server.loadAccount(sponsorKeypair.publicKey());
 
     let transaction = new TransactionBuilder(
-        questAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET
-    })
-        .addOperation(Operation.payment({
-            destination: destinationKeypair.publicKey(),
-            asset: Asset.native(),
-            amount: "100"
+        sponsorAccount, {
+            fee: BASE_FEE,
+            networkPassphrase: Networks.TESTNET
+        })
+        .addOperation(Operation.beginSponsoringFutureReserves({
+            sponsoredId: questKeypair.publicKey()
+        }))
+        .addOperation(Operation.createAccount({
+            destination: questKeypair.publicKey(),
+            startingBalance: "0"
+        }))
+        .addOperation(Operation.endSponsoringFutureReserves({
+            source: questKeypair.publicKey()
         }))
         .setTimeout(30)
         .build()
 
-    transaction.sign(questKeypair)
+    transaction.sign(
+        sponsorKeypair,
+        questKeypair
+    )
 
     try {
         let res = await server.submitTransaction(transaction)
