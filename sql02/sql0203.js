@@ -26,9 +26,29 @@
     if (response.ok) {
         console.log(`Quest Account ${questKeypair.publicKey()} successfully funded`)
     } else {
-        console.log(`Something went wrong funding account: ${kp.publicKey}.`);
+        console.log(`Something went wrong funding account: ${questKeypair.publicKey()}.`);
     }
 
     const server = new Server('https://horizon-testnet.stellar.org')
     const questAccount = await server.loadAccount(questKeypair.publicKey())
+
+    let transaction = new TransactionBuilder(
+        questAccount, {
+            fee: BASE_FEE,
+            networkPassphrase: Networks.TESTNET
+        })
+        .addOperation(Operation.setOptions({
+            homeDomain: 'example.glitch.me'
+        }))
+        .setTimeout(30)
+        .build()
+
+    transaction.sign(questKeypair)
+
+    try {
+        let res = await server.submitTransaction(transaction)
+        console.log(`Transaction Successful! Hash: ${res.hash}`)
+    } catch (error) {
+        console.log(`${error}: More details:\n${error.response.data}`)
+    }
 })();
