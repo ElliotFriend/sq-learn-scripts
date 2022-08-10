@@ -5,7 +5,6 @@
         TransactionBuilder,
         Networks,
         Operation,
-        Asset,
         BASE_FEE
     } = require('stellar-sdk');
     const fetch = require('node-fetch');
