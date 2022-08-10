@@ -9,8 +9,8 @@
     } = require('stellar-sdk');
     const fetch = require('node-fetch');
 
-    const questKeypair = Keypair.fromSecret('SAVWSNA7BZ757J5VGITZOFAF5TSYZLPNSW5YXYYZAIQG5MSDQ4HVF37G');
-    // const questKeypair = Keypair.random()
+    // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
+    const questKeypair = Keypair.random()
     const destinationKeypair = Keypair.random()
 
     // Optional: Log the keypair details if you want to save the information for later.
