@@ -9,7 +9,7 @@
     } = require('stellar-sdk');
     const fetch = require('node-fetch');
 
-    // const questKeypair = StellarSdk.Keypair.fromSecret('SECRETKEYHERE');
+    // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
     const questKeypair = Keypair.random()
     const secondSigner = Keypair.random()
     const thirdSigner = Keypair.random()
