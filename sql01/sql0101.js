@@ -11,9 +11,9 @@
 
     // Part 1: Create the Quest Account by funding the Quest Keypair with XLM from friendbot
 
-    // const questKeypair = StellarSdk.Keypair.fromSecret('SECRETKEYHERE');
+    // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
     const questKeypair = Keypair.random()
-
+    
     // Optional: Log the keypair details if you want to save the information for later.
     console.log(`Quest Public Key: ${questKeypair.publicKey()}`);
     console.log(`Quest Secret Key: ${questKeypair.secret()}`);
@@ -26,9 +26,9 @@
     // console.log(json)
 
     if (response.ok) {
-        console.log(`Quest Account ${questAccount.publicKey()} successfully funded`)
+        console.log(`Quest Account ${questKeypair.publicKey()} successfully funded`)
     } else {
-        console.log(`Something went wrong funding account: ${kp.publicKey}.`);
+        console.log(`Something went wrong funding account: ${questKeypair.publicKey()}.\nPerhaps it is already funded? ¯\\_(ツ)_/¯`);
     }
 
     // Part 2: Create a new account using the `createAccount` operation with the Quest Account as the source account
@@ -56,8 +56,8 @@
     transaction.sign(questKeypair)
 
     try {
-        await server.submitTransaction(transaction)
-        console.log(`New account ${newKeypair.publicKey()} has successfully been created`)
+        let res = await server.submitTransaction(transaction)
+        console.log(`Transaction Successful! Hash: ${res.hash}`)
     } catch (error) {
         console.log(`${error}: More details:\n${error.response.data}`)
     }
