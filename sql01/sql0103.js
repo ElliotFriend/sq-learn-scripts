@@ -33,7 +33,7 @@
         if (response.ok) {
             console.log(`Account ${kp.publicKey()} successfully funded.`);
         } else {
-            console.log(`Something went wrong funding account: ${kp.publicKey}.`);
+            console.log(`Something went wrong funding account:\n\t${questKeypair.publicKey()}.\n\tPerhaps it is already funded? ¯\\_(ツ)_/¯`);
         }
     }));
 

@@ -28,7 +28,7 @@
     if (response.ok) {
         console.log(`Quest Account ${questKeypair.publicKey()} successfully funded`)
     } else {
-        console.log(`Something went wrong funding account: ${questKeypair.publicKey()}.\nPerhaps it is already funded? ¯\\_(ツ)_/¯`);
+        console.log(`Something went wrong funding account:\n\t${questKeypair.publicKey()}.\n\tPerhaps it is already funded? ¯\\_(ツ)_/¯`);
     }
 
     // Part 2: Create a new account using the `createAccount` operation with the Quest Account as the source account

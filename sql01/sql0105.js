@@ -44,7 +44,7 @@
         if (response.ok) {
             console.log(`Account ${kp.publicKey()} successfully funded.`);
         } else {
-            console.log(`Something went wrong funding account: ${kp.publicKey}.`);
+            console.log(`Something went wrong funding account:\n\t${questKeypair.publicKey()}.\n\tPerhaps it is already funded? ¯\\_(ツ)_/¯`);
         }
     }));
 
@@ -77,14 +77,14 @@
         .addOperation(Operation.createPassiveSellOffer({
             selling: pathAsset,
             buying: Asset.native(),
-            amount: "10000",
+            amount: "2000",
             price: "1",
             source: distributorKeypair.publicKey()
         }))
         .addOperation(Operation.createPassiveSellOffer({
             selling: Asset.native(),
             buying: pathAsset,
-            amount: "10000",
+            amount: "2000",
             price: "1",
             source: distributorKeypair.publicKey()
         }))
@@ -113,12 +113,10 @@
         distributorKeypair
     )
 
-    console.log(transaction.toXDR())
-
     try {
         let res = await server.submitTransaction(transaction)
         console.log(`Transaction Successful! Hash: ${res.hash}`)
     } catch (error) {
-        console.log(`${error}: More details:\n${error.response}`)
+        console.log(`${error}: More details:\n${error.response.data}`)
     }
 })();
