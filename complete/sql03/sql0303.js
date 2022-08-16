@@ -52,7 +52,7 @@
     try {
         let res = await server.submitTransaction(transaction);
         console.log(`Transaction Successful! Hash: ${res.hash}`);
-        console.log(transaction.getClaimableBalanceId(0));
+        console.log(`Claimable Balance ID: ${transaction.getClaimableBalanceId(0)}`);
 
         console.log(`Waiting 5 minutes. Please check back ${new Date(new Date().getTime() + 300000)}`);
         const waitFiveMinutes = () => new Promise(resolve => setTimeout(resolve, 300000));
