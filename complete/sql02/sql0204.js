@@ -7,12 +7,12 @@
         Operation,
         BASE_FEE
     } = require('stellar-sdk');
-    const fetch = require('node-fetch');
+    const { friendbot } = require('../../sq-learn-utils');
 
     // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-    const questKeypair = Keypair.random()
-    const secondSigner = Keypair.random()
-    const thirdSigner = Keypair.random()
+    const questKeypair = Keypair.random();
+    const secondSigner = Keypair.random();
+    const thirdSigner = Keypair.random();
 
     // Optional: Log the keypair details if you want to save the information for later.
     console.log(`Quest Public Key: ${questKeypair.publicKey()}`);
@@ -22,21 +22,10 @@
     console.log(`Third Signer Public Key: ${thirdSigner.publicKey()}`);
     console.log(`Third Signer Secret Key: ${thirdSigner.secret()}`);
 
-    const friendbotUrl = `https://friendbot.stellar.org?addr=${questKeypair.publicKey()}`;
-    let response = await fetch(friendbotUrl)
+    await friendbot(questKeypair.publicKey());
 
-    // // Optional: Look at the responses from fetch.
-    // let json = await response.json()
-    // console.log(json)
-
-    if (response.ok) {
-        console.log(`Quest Account ${questKeypair.publicKey()} successfully funded`)
-    } else {
-        console.log(`Something went wrong funding account: ${kp.publicKey}.`);
-    }
-
-    const server = new Server('https://horizon-testnet.stellar.org')
-    const questAccount = await server.loadAccount(questKeypair.publicKey())
+    const server = new Server('https://horizon-testnet.stellar.org');
+    const questAccount = await server.loadAccount(questKeypair.publicKey());
 
     let transaction = new TransactionBuilder(
         questAccount, {
@@ -62,15 +51,15 @@
             }
         }))
         .setTimeout(30)
-        .build()
+        .build();
 
-    transaction.sign(questKeypair)
+    transaction.sign(questKeypair);
 
     try {
-        let res = await server.submitTransaction(transaction)
-        console.log(`Additional Signers Successfully Added! Hash: ${res.hash}`)
+        let res = await server.submitTransaction(transaction);
+        console.log(`Additional Signers Successfully Added! Hash: ${res.hash}`);
 
-        const questAccount = await server.loadAccount(questKeypair.publicKey())
+        const questAccount = await server.loadAccount(questKeypair.publicKey());
         let multisigTransaction = new TransactionBuilder(
             questAccount, {
                 fee: BASE_FEE,
@@ -81,17 +70,17 @@
                 value: "with three signatures!"
             }))
             .setTimeout(30)
-            .build()
+            .build();
         
             multisigTransaction.sign(
                 questKeypair,
                 secondSigner,
                 thirdSigner
-            )
+            );
 
-        res = await server.submitTransaction(multisigTransaction)
-        console.log(`Multisig Transaction Successful! Hash: ${res.hash}`)
+        res = await server.submitTransaction(multisigTransaction);
+        console.log(`Multisig Transaction Successful! Hash: ${res.hash}`);
     } catch (error) {
-        console.log(`${error}: More details:\n${error.response.data}`)
+        console.log(`${error}: More details:\n${error.response.data}`);
     }
 })();
