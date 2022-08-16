@@ -7,28 +7,16 @@
         Operation,
         BASE_FEE
     } = require('stellar-sdk');
-    const fetch = require('node-fetch');
+    const { friendbot } = require('../../sq-learn-utils');
 
     // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-    const questKeypair = Keypair.random()
+    const questKeypair = Keypair.random();
 
     // Optional: Log the keypair details if you want to save the information for later.
     console.log(`Quest Public Key: ${questKeypair.publicKey()}`);
     console.log(`Quest Secret Key: ${questKeypair.secret()}`);
 
-    const friendbotUrl = `https://friendbot.stellar.org?addr=${questKeypair.publicKey()}`;
-    let response = await fetch(friendbotUrl)
-
-    // // Optional: Looking at the responses from fetch
-    // let json = await response.json();
-    // console.log(json);
-
-    // Check that the response is OK, and give a confirmation message.
-    if (response.ok) {
-        console.log(`Account ${questKeypair.publicKey()} successfully funded.`);
-    } else {
-        console.log(`Something went wrong funding account: ${questKeypair.publicKey}.`);
-    }
+    await friendbot(questKeypair.publicKey());
 
     const server = new Server('https://horizon-testnet.stellar.org');
     const questAccount = await server.loadAccount(questKeypair.publicKey());
@@ -42,13 +30,13 @@
             bumpTo: questAccount.sequence + 100
         }))
         .setTimeout(30)
-        .build()
+        .build();
 
-    transaction.sign(questKeypair)
+    transaction.sign(questKeypair);
 
     try {
-        let res = await server.submitTransaction(transaction)
-        console.log(`Transaction Successful! Hash: ${res.hash}`)
+        let res = await server.submitTransaction(transaction);
+        console.log(`Transaction Successful! Hash: ${res.hash}`);
 
         const questAccount = await server.loadAccount(questKeypair.publicKey());
         let nextTransaction = new TransactionBuilder(
@@ -61,14 +49,14 @@
                 value: "bumped"
             }))
             .setTimeout(30)
-            .build()
+            .build();
 
-        nextTransaction.sign(questKeypair)
+        nextTransaction.sign(questKeypair);
 
-        res = await server.submitTransaction(nextTransaction)
-        console.log(`Transaction Successful! Hash: ${res.hash}`)
+        res = await server.submitTransaction(nextTransaction);
+        console.log(`Transaction Successful! Hash: ${res.hash}`);
     } catch (error) {
-        console.log(`${error}: More details:\n${error.response.data}`)
+        console.log(`${error}: More details:\n${error.response.data}`);
     }
 
 })();
