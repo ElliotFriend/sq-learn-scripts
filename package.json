@@ -1,0 +1,25 @@
+{
+  "name": "sq-learn-scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sq-learn-utils.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ElliotFriend/sq-learn-scripts.git"
+  },
+  "author": "Elliot J. Voris <elliot@voris.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ElliotFriend/sq-learn-scripts/issues"
+  },
+  "homepage": "https://github.com/ElliotFriend/sq-learn-scripts#readme",
+  "dependencies": {
+    "stellar-sdk": "^10.1.2"
+  },
+  "devDependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
