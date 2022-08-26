@@ -13,7 +13,7 @@ const questKeypair = null /* TODO (3): load your quest account's keypair here*/
 const destinationKeypair = null /* TODO (3): create a destination keypair here */
 
 /* This method of using friendbot is not strictly necessary. We've put together
- * this helper function only as a convenience for you. You you free to choose
+ * this helper function only as a convenience for you. You are free to choose
  * any number of ways to fund these accounts. */
 await friendbot([questKeypair.publicKey(), destinationKeypair.publicKey()])
 

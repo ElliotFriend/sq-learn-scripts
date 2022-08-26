@@ -1,61 +1,21 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    Asset,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+const {
+  /* TODO (1): import the things you'll need from the stellar-sdk */
+} = require('stellar-sdk')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
-  const issuerKeypair = Keypair.random()
+/* TODO (2): get your two keypairs ready, don't forget to have them funded */
+const questKeypair = null
+const issuerKeypair = null
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
-  console.log(`Issuer Public Key: ${issuerKeypair.publicKey()}`)
-  console.log(`Issuer Secret Key: ${issuerKeypair.secret()}`)
+/* TODO (3): set up your server connection and load up your quest account */
+const server = null
+const questAccount = null
 
-  // Fund both accounts using friendbot
-  await friendbot([questKeypair.publicKey(), issuerKeypair.publicKey()])
+/* TODO (4): Create your asset below. Use any code you like! */
+const someAsset = new Asset(
+  code = null,
+  issuer = null
+)
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
-  const santaAsset = new Asset(
-    code = 'SANTA',
-    issuer = issuerKeypair.publicKey()
-  )
+const transaction = null /* TODO (5): build your transaction containing the changeTrust operation */
 
-  const transaction = new TransactionBuilder(
-    questAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.changeTrust({
-      asset: santaAsset
-    }))
-    .addOperation(Operation.payment({
-      destination: questKeypair.publicKey(),
-      asset: santaAsset,
-      amount: '10',
-      source: issuerKeypair.publicKey()
-    }))
-    .setTimeout(30)
-    .build()
-
-  transaction.sign(
-    questKeypair,
-    issuerKeypair
-  )
-
-  try {
-    const res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+/* TODO (6): Sign and submit your transaction to the network. */
