@@ -1,13 +1,6 @@
 const {
-  Keypair,
-  Server,
-  TransactionBuilder,
-  Networks,
-  Operation,
-  Asset,
-  BASE_FEE
+  /* TODO (1): import anything you'll need from the stellar-sdk */
 } = require('stellar-sdk')
-const { friendbot } = require('../../sq-learn-utils')
 
 /* TODO (2): create and fund all the accounts you'll need */
 const questKeypair = null
@@ -20,13 +13,10 @@ const server = null
 const questAccount = null
 const pathAsset = null
 
-const transaction = new TransactionBuilder(
-  /* TODO (4-6): build your transaction below this line */
-
-
-  
-  /* TODO (4-6): build your transaction above this line */
-  .setTimeout(30)
-  .build()
+/* TODO (4-6): build your transaction here.
+ * If you are attempting this quest in only one transaction, you'll need
+ * several operations to accomplish it. Think carefully about which operations
+ * you'll need, and which source account each operation will require. */
+const transaction = null
 
 /* TODO (7): sign and submit your transaction to the network */
