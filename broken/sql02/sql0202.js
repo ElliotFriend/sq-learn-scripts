@@ -1,44 +1,26 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+const {
+  Server,
+  Transaction,
+  Networks,
+  BASE_FEE
+} = require('stellar-sdk')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
+/* TODO (1): setup your keypair, server, and load your account */
+const questKeypair = Keypair.fromSecret()
+const server = null
+const questAccount = server.loadAccount()
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
+/* TODO (2): build your transaction here, containing a `manageData` operation */
+const transaction = new Transaction(
+  questAccount, {
+    fee: BASE_FEE,
+    passphrase: Networks.TESTNET
+  })
+  .addOperation(
+    /* add your `manageData` operation here */
+  )
+  .build()
 
-  await friendbot(questKeypair.publicKey())
-
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
-
-  const transaction = new TransactionBuilder(
-    questAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.manageData({
-      name: 'Hello',
-      value: 'Stellar Quest!'
-    }))
-    .setTimeout(30)
-    .build()
-
-  transaction.sign(questKeypair)
-
-  try {
-    const res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+/* TODO (3): sign and submit your transaction to the testnet */
+transaction.sign(questAccount)
+const res = null

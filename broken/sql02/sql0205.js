@@ -1,79 +1,46 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    Asset,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+const {
+  Keypair,
+  Server,
+  TransactionBuilder,
+  Networks,
+  Operation,
+  Asset,
+  BASE_FEE
+} = require('stellar-sdk')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
-  const issuerKeypair = Keypair.random()
+/* TODO (1): you'll need two funded keypairs for this quest */
+const questKeypair = null
+const issuerKeypair = null
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
-  console.log(`Issuer Public Key: ${issuerKeypair.publicKey()}`)
-  console.log(`Issuer Secret Key: ${issuerKeypair.secret()}`)
+/* TODO (1): create your server, and load the *issuer* account from it */
+const server = new Server()
+const issuerAccount = await server.loadAccount()
 
-  // Fund both accounts using friendbot
-  await friendbot([questKeypair.publicKey(), issuerKeypair.publicKey()])
+/* TODO (2): create your custom asset that we can control authorization for */
+const controlledAsset = new Asset()
 
-  const controlledAsset = new Asset(
-    code = 'CONTROL',
-    issuer = issuerKeypair.publicKey()
+/* TODO (3-7): add onto the transaction below to complete your quest. Be mindful
+ * of which source account you're using for each operation */
+const transaction = new TransactionBuilder(
+  issuerAccount, {
+    fee: BASE_FEE
+  })
+  .addOperation(
+    /* (3) you need an operation to set the flags on the issuer account */
+  )
+  .addOperation(
+    /* (4) you need an operation for the quest account to trust the asset */
+  )
+  .addOperation(
+    /* (5) you need an operation to authorize the trustline for the quest account */
+  )
+  .addOperation(
+    /* (6) you need an operation to send the asset to the quest account */
+  )
+  .addOperation(
+    /* (7) you need an operation to revoke the quest account's authorization */
   )
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const issuerAccount = await server.loadAccount(issuerKeypair.publicKey())
-
-  const transaction = new TransactionBuilder(
-    issuerAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.setOptions({
-      setFlags: 11
-    }))
-    .addOperation(Operation.changeTrust({
-      asset: controlledAsset,
-      source: questKeypair.publicKey()
-    }))
-    .addOperation(Operation.setTrustLineFlags({
-      trustor: questKeypair.publicKey(),
-      asset: controlledAsset,
-      flags: {
-        authorized: true
-      }
-    }))
-    .addOperation(Operation.payment({
-      destination: questKeypair.publicKey(),
-      asset: controlledAsset,
-      amount: '100000'
-    }))
-    .addOperation(Operation.setTrustLineFlags({
-      trustor: questKeypair.publicKey(),
-      asset: controlledAsset,
-      flags: {
-        authorized: false
-      }
-    }))
-    .setTimeout(30)
-    .build()
-
-  transaction.sign(
-    questKeypair,
-    issuerKeypair
-  )
-
-  try {
-    const res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+/* TODO (8): sign and submit the transaction to the testnet */
+transaction.sign()
+const res = await server.submitTransaction(transaction)

@@ -1,43 +1,41 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+/* BEGIN RUNKIT ENDPOINT */
+exports.endpoint = function (request, response) {
+  const tomlData = `VERSION = "0.1.0"
+NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+ACCOUNTS = [ 
+  "REPLACE_WITH_YOUR_QUEST_ACCOUNT_PUBLIC_KEY" 
+]`
+  response.writeHead(200, {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'text/plain'
+  })
+  response.end(tomlData)
+}
+/* END RUNKIT ENDPOINT */
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
 
-  await friendbot(questKeypair.publicKey())
+/* BEGIN STELLAR TRANSACTION */
+const {
+  TransactionBuilder,
+  Networks,
+  Operation,
+} = require('stellar-sdk')
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
+/* TODO (3): setup your keypair, server, and load your account */
+const questKeypair = Keypair.random()
+const server = new Server()
+const questAccount = await server.loadAccount(questKeypair)
 
-  const transaction = new TransactionBuilder(
-    questAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.setOptions({
-      homeDomain: 'example.glitch.me'
-    }))
-    .setTimeout(30)
-    .build()
+/* TODO (4): */
+const transaction = new TransactionBuilder(
+  questAccount, {
+    networkPassphrase: Networks.TESTNET
+  })
+  /* add your operation here */
+  .setTimeout(30)
 
-  transaction.sign(questKeypair)
-
-  try {
-    const res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+/* TODO (5): sign and submit your transaction to the testnet */
+transaction.sign()
+const res = server.submit()
+/* END STELLAR TRANSACTION */
