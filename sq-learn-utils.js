@@ -16,4 +16,16 @@ const fundUsingFriendbot = async (addresses) => {
   }))
 }
 
+/**
+ * Wait a given number of minutes, and then move on.
+ *
+ * @param {number} minutes The number of minutes to wait before proceeding.
+ */
+const waitSomeMinutes = async (minutes) => {
+  const milliseconds = minutes * 60000
+  console.log(`Waiting ${minutes} minutes. Please check back ${new Date(new Date().getTime() + milliseconds)}`)
+  await new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
 exports.friendbot = fundUsingFriendbot
+exports.waitSomeMinutes = waitSomeMinutes
