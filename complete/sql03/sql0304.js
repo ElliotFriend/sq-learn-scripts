@@ -6,7 +6,9 @@
     Networks,
     Operation,
     Asset,
-    BASE_FEE
+    BASE_FEE,
+    AuthClawbackEnabledFlag,
+    AuthRevocableFlag
   } = require('stellar-sdk')
   const { friendbot } = require('../../sq-learn-utils')
 
@@ -31,16 +33,33 @@
   const server = new Server('https://horizon-testnet.stellar.org')
   const questAccount = await server.loadAccount(questKeypair.publicKey())
 
-  // issue the assset
+  // set options
   const transaction = new TransactionBuilder(
     questAccount, {
       fee: BASE_FEE,
       networkPassphrase: Networks.TESTNET
     })
     .addOperation(Operation.setOptions({
-      setFlags: 10,
-      source: questKeypair.publicKey()
+      setFlags: 10
     }))
+    .setTimeout(30)
+    .build()
+
+  transaction.sign(questKeypair)
+
+  try {
+    let res = await server.submitTransaction(transaction)
+    console.log(`Transaction Successful! Hash: ${res.hash}`)
+  } catch (error) {
+    console.log(`${error}: More details:\n${error.response.data.extras}`)
+  }
+
+  // issue the assset
+  const paymentTransaction = new TransactionBuilder(
+    questAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: Networks.TESTNET
+    })
     .addOperation(Operation.changeTrust({
       asset: clawbackAsset,
       source: destinationKeypair.publicKey()
@@ -54,34 +73,38 @@
     .setTimeout(30)
     .build()
 
-  transaction.sign(
+  paymentTransaction.sign(
     questKeypair,
     destinationKeypair
   )
 
   try {
-    let res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
+    let res = await server.submitTransaction(paymentTransaction)
+    console.log(`Payment Successful! Hash: ${res.hash}`)
+  } catch (error) {
+    console.log(`${error}: More details:\n${error.response.data.extras}`)
+  }
 
-    const questAccount = await server.loadAccount(questKeypair.publicKey())
-    const clawbackTransaction = new TransactionBuilder(
-      questAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET
-      })
-      .addOperation(Operation.clawback({
-        asset: clawbackAsset,
-        amount: '250',
-        from: destinationKeypair.publicKey()
-      }))
-      .setTimeout(30)
-      .build()
+  // const questAccount = await server.loadAccount(questKeypair.publicKey())
+  const clawbackTransaction = new TransactionBuilder(
+    questAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: Networks.TESTNET
+    })
+    .addOperation(Operation.clawback({
+      asset: clawbackAsset,
+      amount: '250',
+      from: destinationKeypair.publicKey()
+    }))
+    .setTimeout(30)
+    .build()
 
-    clawbackTransaction.sign(questKeypair)
+  clawbackTransaction.sign(questKeypair)
 
-    res = await server.submitTransaction(clawbackTransaction)
+  try {
+    let res = await server.submitTransaction(clawbackTransaction)
     console.log(`Clawback Successful! Hash: ${res.hash}`)
   } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
+    console.log(`${error}: More details:\n${error.response.data.extras}`)
   }
 })()

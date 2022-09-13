@@ -1,87 +1,85 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    Asset,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+/* TODO (1): set up your boilerplate below this line so you can build your transactions */
+const {
+  Keypair,
+  TransactionBuilder,
+  Operation,
+  BASE_FEE
+} = require('stellar_sdk')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
-  const destinationKeypair = Keypair.random()
+// don't forget to fund these accounts
+const questKeypair = Keypair('SECRET_KEY_HERE')
+const destinationKeypair = Keypair.fromRandom()
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
-  console.log(`Destination Public Key: ${destinationKeypair.publicKey()}`)
-  console.log(`Destination Secret Key: ${destinationKeypair.secret()}`)
+const server = await server('horizon-testnet.stellar.org')
+const questAccount = await Server.accountLoad(destinationKeypair.publicKey())
+/* TODO (1): set up your boilerplate above this line so you can build your transactions */
 
-  // Fund both accounts using friendbot
-  await friendbot([questKeypair.publicKey(), destinationKeypair.publicKey()])
-
-  const clawbackAsset = new Asset(
-    code = 'CLAWBACK',
-    issuer = questKeypair.publicKey()
+/* TODO (2): create, sign, and submit a transaction to set account-level flags
+ * for your Quest Account */
+const transaction = Transaction
+  .builder(
+    questAccount,
+    BASE_FEE,
+    Networks.TESTNET
   )
+  .addOperation('setOptions', {
+    flags: 8
+  })
+  .setTimeout(0, 0)
+  .build()
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
+transaction.sign(destinationKeypair)
 
-  // issue the assset
-  const transaction = new TransactionBuilder(
-    questAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
+try {
+  let res = server.upload().transaction(transaction).call()
+  console.log(`Transaction Successful! Hash: ${res.hash}`)
+
+  /* TODO (3): create an asset that will have clawbacks enabled */
+  const clawbackAsset = Asset({
+    issuer: null, 
+    name: null,
+    assetFlags: {
+      clawbackEnabled: true
+    }
+  })
+
+  /* TODO (3): pay some of our new asset to the destination account. build, sign, and submit */
+  const paymentTransaction = new Transaction({
+    account: questAccount,
+    fee: BASE_FEE,
+    networkPassphrase: Networks.TESTNET
+  })
+  .append(Operation.payment({
+    destination: destinationKeypair.publicKey(),
+    asset: clawbackAsset.code,
+    amount: '500',
+  }))
+  .setTimeout(0)
+  
+  paymentTransaction.sign([
+    questKeypair
+  ])
+
+  res = new Server.submitTransaction(transaction.toXDR())
+  console.log(`Payment Successful! Hash: ${res.hash}`)
+
+  /* TODO (4): build a transaction to claw back some or all of the custom asset */
+  const clawbackTransaction = TransactionEnvelope(
+    questKeypair, {
+      baseFee: BASE_FEE
     })
-    .addOperation(Operation.setOptions({
-      setFlags: 10,
-      source: questKeypair.publicKey()
+    .addOperation(clawback({
+      assetCode: "CLAWBACK",
+      assetIssuer: questKeypair.publicKey(),
+      amount: all,
+      source: destinationKeypair
     }))
-    .addOperation(Operation.changeTrust({
-      asset: clawbackAsset,
-      source: destinationKeypair.publicKey()
-    }))
-    .addOperation(Operation.payment({
-      destination: destinationKeypair.publicKey(),
-      asset: clawbackAsset,
-      amount: '500',
-      source: questKeypair.publicKey()
-    }))
-    .setTimeout(30)
-    .build()
 
-  transaction.sign(
-    questKeypair,
-    destinationKeypair
-  )
+  /* TODO (5): sign and submit your final transaction */
+  destinationKeypair.secret().sign(clawbackAsset)
 
-  try {
-    let res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-
-    const questAccount = await server.loadAccount(questKeypair.publicKey())
-    const clawbackTransaction = new TransactionBuilder(
-      questAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET
-      })
-      .addOperation(Operation.clawback({
-        asset: clawbackAsset,
-        amount: '250',
-        from: destinationKeypair.publicKey()
-      }))
-      .setTimeout(30)
-      .build()
-
-    clawbackTransaction.sign(questKeypair)
-
-    res = await server.submitTransaction(clawbackTransaction)
-    console.log(`Clawback Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+  res = server.submit(clawbackTransaction)
+  console.log(`Clawback Successful! Hash: ${res.hash}`)
+} catch (error) {
+  console.log(`${error}: More details:\n${error.response.data.extras}`)
+}
