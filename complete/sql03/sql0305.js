@@ -39,7 +39,7 @@
   const server = new Server('https://horizon-testnet.stellar.org')
   const questAccount = await server.loadAccount(questKeypair.publicKey())
 
-  const transaction = new TransactionBuilder(
+  const lpDepositTransaction = new TransactionBuilder(
     questAccount, {
       fee: BASE_FEE,
       networkPassphrase: Networks.TESTNET
@@ -49,63 +49,72 @@
     }))
     .addOperation(Operation.liquidityPoolDeposit({
       liquidityPoolId: lpId,
-      maxAmountA: '1000',
-      maxAmountB: '2000',
+      maxAmountA: '100',
+      maxAmountB: '100',
       minPrice: {
         n: 1,
-        d: 2
+        d: 1
       },
       maxPrice: {
         n: 1,
-        d: 2
+        d: 1
       }
     }))
-    .addOperation(Operation.changeTrust({
-      asset: noodleAsset,
-      source: tradeKeypair.publicKey()
-    }))
-    // .addOperation(Operation.pathPaymentStrictReceive({
-    //   sendAsset: Asset.native(),
-    //   sendMax: '7000',
-    //   destination: tradeKeypair.publicKey(),
-    //   destAsset: noodleAsset,
-    //   destAmount: '1000',
-    //   source: tradeKeypair.publicKey()
-    // }))
-    .addOperation(Operation.pathPaymentStrictSend({
-      sendAsset: Asset.native(),
-      sendAmount: '50',
-      destination: tradeKeypair.publicKey(),
-      destAsset: noodleAsset,
-      destMin: '0.1',
-      source: tradeKeypair.publicKey()
-    }))
-    // .addOperation(Operation.liquidityPoolWithdraw({
-    //   liquidityPoolId: lpId,
-    //   amount: '100',
-    //   minAmountA: '0',
-    //   minAmountB: '0'
-    // }))
     .setTimeout(30)
     .build()
 
-  transaction.sign(
-    questKeypair,
-    tradeKeypair
-  )
+  lpDepositTransaction.sign(questKeypair)
 
   try {
-    const res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
+    let res = await server.submitTransaction(lpDepositTransaction)
+    console.log(`LP Deposit Successful! Hash: ${res.hash}`)
+
+    const tradeAccount = await server.loadAccount(tradeKeypair.publicKey())
+
+    const pathPaymentTransaction = new TransactionBuilder(
+      tradeAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      })
+      .addOperation(Operation.changeTrust({
+        asset: noodleAsset,
+        source: tradeKeypair.publicKey()
+      }))
+      .addOperation(Operation.pathPaymentStrictReceive({
+        sendAsset: Asset.native(),
+        sendMax: '10',
+        destination: tradeKeypair.publicKey(),
+        destAsset: noodleAsset,
+        destAmount: '1',
+        source: tradeKeypair.publicKey()
+      }))
+      .setTimeout(30)
+      .build()
+
+    pathPaymentTransaction.sign(tradeKeypair)
+
+    res = await server.submitTransaction(pathPaymentTransaction)
+    console.log(`Path Payment Successful! Hash: ${res.hash}`)
+
+    const lpWithdrawTransaction = new TransactionBuilder(
+      questAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      })
+      .addOperation(Operation.liquidityPoolWithdraw({
+        liquidityPoolId: lpId,
+        amount: '100',
+        minAmountA: '0',
+        minAmountB: '0'
+      }))
+      .setTimeout(30)
+      .build()
+
+    lpWithdrawTransaction.sign(questKeypair)
+
+    res = await server.submitTransaction(lpWithdrawTransaction)
+    console.log(`LP Withdraw Successful! Hash: ${res.hash}`)
   } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
+    console.log(`${error}\nMore details:\n${error.response.data.extras}`)
   }
 })()
-
-// fee stuff
-//
-// i need to buy 1 NOODLE, and pay the LP 0.3% in fees (0.3% in NOODLE)
-// so i have to calculate (before/after) what the xlm value of 0.003 noodle is
-// and send it along with the payment?
-// no, it's .3% of XLM I'm giving, since the amm is charging the fee
-// on the unit **it** is buying?
