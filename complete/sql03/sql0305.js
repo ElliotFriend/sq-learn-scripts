@@ -49,35 +49,43 @@
     }))
     .addOperation(Operation.liquidityPoolDeposit({
       liquidityPoolId: lpId,
-      maxAmountA: '100',
-      maxAmountB: '100',
+      maxAmountA: '1000',
+      maxAmountB: '2000',
       minPrice: {
         n: 1,
-        d: 1
+        d: 2
       },
       maxPrice: {
         n: 1,
-        d: 1
+        d: 2
       }
     }))
     .addOperation(Operation.changeTrust({
       asset: noodleAsset,
       source: tradeKeypair.publicKey()
     }))
-    .addOperation(Operation.pathPaymentStrictReceive({
+    // .addOperation(Operation.pathPaymentStrictReceive({
+    //   sendAsset: Asset.native(),
+    //   sendMax: '7000',
+    //   destination: tradeKeypair.publicKey(),
+    //   destAsset: noodleAsset,
+    //   destAmount: '1000',
+    //   source: tradeKeypair.publicKey()
+    // }))
+    .addOperation(Operation.pathPaymentStrictSend({
       sendAsset: Asset.native(),
-      sendMax: '1000',
+      sendAmount: '50',
       destination: tradeKeypair.publicKey(),
       destAsset: noodleAsset,
-      destAmount: '1',
+      destMin: '0.1',
       source: tradeKeypair.publicKey()
     }))
-    .addOperation(Operation.liquidityPoolWithdraw({
-      liquidityPoolId: lpId,
-      amount: '100',
-      minAmountA: '0',
-      minAmountB: '0'
-    }))
+    // .addOperation(Operation.liquidityPoolWithdraw({
+    //   liquidityPoolId: lpId,
+    //   amount: '100',
+    //   minAmountA: '0',
+    //   minAmountB: '0'
+    // }))
     .setTimeout(30)
     .build()
 
@@ -93,3 +101,11 @@
     console.log(`${error}: More details:\n${error.response.data}`)
   }
 })()
+
+// fee stuff
+//
+// i need to buy 1 NOODLE, and pay the LP 0.3% in fees (0.3% in NOODLE)
+// so i have to calculate (before/after) what the xlm value of 0.003 noodle is
+// and send it along with the payment?
+// no, it's .3% of XLM I'm giving, since the amm is charging the fee
+// on the unit **it** is buying?

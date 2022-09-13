@@ -9,7 +9,10 @@
     Claimant,
     BASE_FEE
   } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+  const {
+    friendbot,
+    waitSomeMinutes
+  } = require('../../sq-learn-utils')
 
   // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
   const questKeypair = Keypair.random()
@@ -27,6 +30,18 @@
   const server = new Server('https://horizon-testnet.stellar.org')
   const questAccount = await server.loadAccount(questKeypair.publicKey())
 
+  const claimant = new Claimant(
+    claimantKeypair.publicKey(),
+    Claimant.predicateNot(
+      Claimant.predicateBeforeRelativeTime('300')
+    )
+  )
+
+  const questClaimant = new Claimant(
+    questKeypair.publicKey(),
+    Claimant.predicateUnconditional()
+  )
+
   const transaction = new TransactionBuilder(
     questAccount, {
       fee: BASE_FEE,
@@ -36,12 +51,8 @@
       asset: Asset.native(),
       amount: '100',
       claimants: [
-        new Claimant(
-          claimantKeypair.publicKey(),
-          Claimant.predicateNot(
-            Claimant.predicateBeforeRelativeTime('300')
-          )
-        )
+        claimant,
+        questClaimant
       ]
     }))
     .setTimeout(30)
@@ -54,9 +65,10 @@
     console.log(`Transaction Successful! Hash: ${res.hash}`)
     console.log(`Claimable Balance ID: ${transaction.getClaimableBalanceId(0)}`)
 
-    console.log(`Waiting 5 minutes. Please check back ${new Date(new Date().getTime() + 300000)}`)
-    const waitFiveMinutes = () => new Promise(resolve => setTimeout(resolve, 300000))
-    await waitFiveMinutes()
+    res = await server.claimableBalances().claimant(claimantKeypair.publicKey()).call()
+    console.log(res.records[0].id)
+
+    await waitSomeMinutes(5)
 
     const claimantAccount = await server.loadAccount(claimantKeypair.publicKey())
     const claimTransaction = new TransactionBuilder(
@@ -73,8 +85,8 @@
     claimTransaction.sign(claimantKeypair)
 
     res = await server.submitTransaction(claimTransaction)
-    console.log(`Balance Successfully Claimed! ${res.hash}`)
+    console.log(`Balance Successfully Claimed! Hash: ${res.hash}`)
   } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
+    console.log(`${error}\nMore details:\n${error.response.data.extras}`)
   }
 })()

@@ -1,5 +1,6 @@
 (async () => {
   const {
+    Account,
     Keypair,
     Server,
     TransactionBuilder,
@@ -27,7 +28,7 @@
       networkPassphrase: Networks.TESTNET
     })
     .addOperation(Operation.bumpSequence({
-      bumpTo: questAccount.sequence + 100
+      bumpTo: (parseInt(questAccount.sequence) + 100).toString()
     }))
     .setTimeout(30)
     .build()
@@ -38,9 +39,14 @@
     let res = await server.submitTransaction(transaction)
     console.log(`Transaction Successful! Hash: ${res.hash}`)
 
-    const questAccount = await server.loadAccount(questKeypair.publicKey())
+    /* We are adding 99 here (instead of 100) because the `build()` method of
+     * the transaction has already incremented the sequence by one. */
+    const bumpedAccount = new Account(
+      questKeypair.publicKey(),
+      (parseInt(questAccount.sequence) + 99).toString()
+    )
     const nextTransaction = new TransactionBuilder(
-      questAccount, {
+      bumpedAccount, {
         fee: BASE_FEE,
         networkPassphrase: Networks.TESTNET
       })
@@ -56,6 +62,6 @@
     res = await server.submitTransaction(nextTransaction)
     console.log(`Transaction Successful! Hash: ${res.hash}`)
   } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
+    console.log(`${error}\nMore details:\n${error.response.data.extras}`)
   }
 })()

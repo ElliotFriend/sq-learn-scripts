@@ -1,61 +1,55 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+/* TODO (1): Fill in all the SDK, account, and keypair setup below this line  */
+const {
+  Keypair,
+  Server,
+  BASE_FEE
+} = require('stellar-sdk')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
+const questKeypair = Keypair.fromPublicKey('PUBLIC_KEY_HERE')
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
+const server = Server(null)
+const questAccount = server.loadAccount(questKeypair.public)
+/* TODO (1): Fill in all the SDK, account, and keypair setup above this line  */
 
-  await friendbot(questKeypair.publicKey())
+const transaction = new TransactionBuilder({
+    source: questAccount,
+    fee: 100,
+    networkPassphrase: TESTNET_PASSPHRASE
+  })
+  .addOperation(bumpSequenceOperation({
+    bumpTo: 0,
+    source: questKeypair
+  }))
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
+TransactionBuilder.sign()
 
-  const transaction = new TransactionBuilder(
-    questAccount, {
+try {
+  let res = await server.submit()
+  console.log(`Transaction Successful! Hash: ${res.hash}`)
+
+  /* TODO (4-5): Provided the previous transaction was successful build, sign
+   * and submit your second transaction from within the try loop */
+
+  /* TODO (4): Use this line to re-load your account from the server */
+  // const bumpedAccount = server.loadAccount(questKeypair.public)
+  
+  /* TODO (4): Use this line to manually create your account object */
+  // const bumpedAccount = Account(accountId, sequence)
+  
+  /* TODO (4): Complete this transaction with the operation of your choosing */
+  const nextTransaction = new Transaction({
       fee: BASE_FEE,
       networkPassphrase: Networks.TESTNET
     })
-    .addOperation(Operation.bumpSequence({
-      bumpTo: questAccount.sequence + 100
-    }))
+    .addOperation(Operation.someOperation())
     .setTimeout(30)
     .build()
 
-  transaction.sign(questKeypair)
+  /* TODO (5): sign and submit the second transaction to the testnet */
+  nextTransaction.sign()
 
-  try {
-    let res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-
-    const questAccount = await server.loadAccount(questKeypair.publicKey())
-    const nextTransaction = new TransactionBuilder(
-      questAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET
-      })
-      .addOperation(Operation.manageData({
-        name: 'sequence',
-        value: 'bumped'
-      }))
-      .setTimeout(30)
-      .build()
-
-    nextTransaction.sign(questKeypair)
-
-    res = await server.submitTransaction(nextTransaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+  let res = await server.submit()
+  console.log(`Transaction Successful! Hash: ${res.hash}`)
+} catch (error) {
+  console.log(`${error}: More details:\n${error.response.data}`)
+}

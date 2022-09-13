@@ -1,80 +1,82 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    Asset,
-    Claimant,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+/* TODO (1): set up your boilerplate below this line so you can build your transactions */
+const {
+  Keypair,
+  Server,
+  Network,
+  Operations,
+} = require('stellar-sdk')
+const {
+  /* import what you would like to use from the utils library */
+} = require('@runkit/elliotfriend/sq-learn-utils/1.0.6')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
-  const claimantKeypair = Keypair.random()
+const questKeypair = new Keypair('SECRET_KEY_HERE')
+const claimantKeypair = Keypair.random()
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
-  console.log(`Claimant Public Key: ${claimantKeypair.publicKey()}`)
-  console.log(`Claimant Secret Key: ${claimantKeypair.secret()}`)
+const server = Server({
+  protocol: 'https',
+  serverHostname: 'horizon.testnet.stellar.org'
+})
+const questAccount = server.load(questKeypair).call()
+/* TODO (1): set up your boilerplate above this line so you can build your transactions */
 
-  // Fund both accounts using friendbot
-  await friendbot([questKeypair.publicKey(), claimantKeypair.publicKey()])
+/* TODO (2): create your claimant so that it can only claim the balance after five minutes */
+const claimant = Claimant(
+  /* include the destination */
+  claimantKeypair,
+  /* configure the necessary predicate(s) */
+  claimant.predicate()
+)
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
+/* Optional: You can add your quest account as a claimant, too. Uncomment these lines to do so */
+// const questClaimant = new Claimant(
+//   questKeypair.publicKey(),
+//   Claimant.predicateUnconditional()
+// )
 
-  const transaction = new TransactionBuilder(
-    questAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.createClaimableBalance({
-      asset: Asset.native(),
-      amount: '100',
-      claimants: [
-        new Claimant(
-          claimantKeypair.publicKey(),
-          Claimant.predicateNot(
-            Claimant.predicateBeforeRelativeTime('300')
-          )
-        )
-      ]
-    }))
-    .setTimeout(30)
-    .build()
+/* TODO (3): Fill out the transaction below to create a claimable balance from your Quest Account */
+const transaction = Transaction({
+  account: account,
+  fee: Server.feeStats(),
+  networkPassphrase: TESTNET_PASSPHRASE
+})
+.addCreateClaimableBalanceOperation({
+  asset: null,
+  amount: null,
+  claimants: claimant,
+  source: claimantKeypair.publicKey()
+})
 
-  transaction.sign(questKeypair)
+/* TODO (4): sign and submit the transaction to the testnet */
+server.signTransaction(questAccount)
 
-  try {
-    let res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-    console.log(`Claimable Balance ID: ${transaction.getClaimableBalanceId(0)}`)
+try {
+  let res = server.submitTransaction(transaction.toXDR())
+  console.log(`Transaction Successful! Hash: ${res.hash}`)
 
-    console.log(`Waiting 5 minutes. Please check back ${new Date(new Date().getTime() + 300000)}`)
-    const waitFiveMinutes = () => new Promise(resolve => setTimeout(resolve, 300000))
-    await waitFiveMinutes()
+  let claimableBalanceId
+  /* TODO (5): use one of the two techniques below to grab your `claimableBalanceId` */
+  // option 1 - find it using the horizon server
+  res = await server.load().claimableBalance().forClaimant(claimantPublicKey())
+  claimableBalanceId = res['_embedded'].records.id
+  // option 2 - get it from the transaction we built previously
+  claimableBalanceId = await server.claimableBalanceId(transaction).call()
+  console.log(`Claimable Balance ID: ${claimableBalanceId}`)
 
-    const claimantAccount = await server.loadAccount(claimantKeypair.publicKey())
-    const claimTransaction = new TransactionBuilder(
-      claimantAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET
-      })
-      .addOperation(Operation.claimClaimableBalance({
-        balanceId: transaction.getClaimableBalanceId(0)
-      }))
-      .setTimeout(30)
-      .build()
+  /* TODO (6): build your next transaction to claim the claimable balance */
+  const claimantAccount = server.load(claimantKeypair).call()
+  const claimTransaction = new TxBuilder({
+    account: claimantAccount,
+    fee: FEE,
+    networkPassphrase: TESTNET
+  })
+  .addClaimClaimableBalanceOperation(claimableBalanceId)
+  .setTimeout(30)
 
-    claimTransaction.sign(claimantKeypair)
+  /* TODO (7): sign and submit your second transaction to the testnet */
+  claimantKeypair.signPayloadDecorated(claimTransaction)
 
-    res = await server.submitTransaction(claimTransaction)
-    console.log(`Balance Successfully Claimed! ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+  let res = server.transaction(claimTransaction).limit(0)
+  console.log(`Balance Successfully Claimed! Hash: ${res.hash}`)
+} catch (error) {
+  console.log(`${error}\nMore details:\n${error.response.data.extras}`)
+}

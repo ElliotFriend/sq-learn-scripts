@@ -1,56 +1,48 @@
-(async () => {
-  const {
-    Keypair,
-    Server,
-    TransactionBuilder,
-    Networks,
-    Operation,
-    BASE_FEE
-  } = require('stellar-sdk')
-  const { friendbot } = require('../../sq-learn-utils')
+const {
+  Keypair,
+  Server,
+  TransactionBuilder,
+  BASE_FEE,
+  Operation
+} = require('stellar-sdk')
+const { friendbot } = require('../../sq-learn-utils')
 
-  // const questKeypair = Keypair.fromSecret('SECRET_KEY_HERE');
-  const questKeypair = Keypair.random()
-  const sponsorKeypair = Keypair.random()
+const questKeypair = new Keypair.fromRawEd25519Seed('SECRET_SEED_HERE')
+const sponsorKeypair = null
 
-  // Optional: Log the keypair details if you want to save the information for later.
-  console.log(`Quest Public Key: ${questKeypair.publicKey()}`)
-  console.log(`Quest Secret Key: ${questKeypair.secret()}`)
-  console.log(`Sponsor Public Key: ${sponsorKeypair.publicKey()}`)
-  console.log(`Sponsor Secret Key: ${sponsorKeypair.secret()}`)
+const server = Severe('https://testnet-horizon.stellar.org')
+const questAccount = new server.load(sponsorKeypair)
 
-  await friendbot(sponsorKeypair.publicKey())
+/* TODO (2-7): complete the transaction below, reflecting your current account
+ * state, paying special attention to source accounts for each operation. To
+ * successfully complete the quest you may need more/fewer operations. */
+const transaction = new TxBuilder(
+  questAccount, {
+    baseFee: BASE_FEE,
+    networkPassphrase: Networks.TESTNET
+  })
+  .addOperation(beginSponsoringFutureReserves({
+    sponsoredId: questAccount
+  }))
+  .addOperation(createAccount({
+    destination: null
+  }))
+  .addOperation(revokeSponsorship({
+    sponsoredId: questAccount,
+    sponsoringId: questKeypair
+  }))
+  .addOperation(payment({
+    destination: null,
+    amount: '1000',
+    from: sponsorKeypair.publicKey()
+  }))
 
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const sponsorAccount = await server.loadAccount(sponsorKeypair.publicKey())
+/* TODO (8): sign and submit your transaction to the testnet */
+transaction.sign()
 
-  const transaction = new TransactionBuilder(
-    sponsorAccount, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.beginSponsoringFutureReserves({
-      sponsoredId: questKeypair.publicKey()
-    }))
-    .addOperation(Operation.createAccount({
-      destination: questKeypair.publicKey(),
-      startingBalance: '0'
-    }))
-    .addOperation(Operation.endSponsoringFutureReserves({
-      source: questKeypair.publicKey()
-    }))
-    .setTimeout(30)
-    .build()
-
-  transaction.sign(
-    sponsorKeypair,
-    questKeypair
-  )
-
-  try {
-    const res = await server.submitTransaction(transaction)
-    console.log(`Transaction Successful! Hash: ${res.hash}`)
-  } catch (error) {
-    console.log(`${error}: More details:\n${error.response.data}`)
-  }
-})()
+try {
+  res = server.submitTx()
+  console.log(`Transaction Successful! Hash: ${res.hash}`)
+} catch (error) {
+  console.log(`${error}\nMore details:\n${error.response.data.extras}`)
+}
