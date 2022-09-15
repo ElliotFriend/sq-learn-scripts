@@ -24,6 +24,9 @@
 
   await friendbot([questKeypair.publicKey(), tradeKeypair.publicKey()])
 
+  const server = new Server('https://horizon-testnet.stellar.org')
+  const questAccount = await server.loadAccount(questKeypair.publicKey())
+
   const noodleAsset = new Asset(
     code = 'NOODLE',
     issuer = questKeypair.publicKey()
@@ -35,9 +38,6 @@
     fee = 30
   )
   const lpId = getLiquidityPoolId('constant_product', lpAsset).toString('hex')
-
-  const server = new Server('https://horizon-testnet.stellar.org')
-  const questAccount = await server.loadAccount(questKeypair.publicKey())
 
   const lpDepositTransaction = new TransactionBuilder(
     questAccount, {
