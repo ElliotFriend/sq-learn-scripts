@@ -5,9 +5,6 @@ const {
   Network,
   Operations,
 } = require('stellar-sdk')
-const {
-  /* import what you would like to use from the utils library */
-} = require('@runkit/elliotfriend/sq-learn-utils/1.0.6')
 
 const questKeypair = new Keypair('SECRET_KEY_HERE')
 const claimantKeypair = Keypair.random()
@@ -61,20 +58,26 @@ try {
   // option 2 - get it from the transaction we built previously
   claimableBalanceId = await server.claimableBalanceId(transaction).call()
   console.log(`Claimable Balance ID: ${claimableBalanceId}`)
+} catch (error) {
+  console.log(`${error}\nMore details:\n${error.response.data.extras}`)
+}
 
-  /* TODO (6): build your next transaction to claim the claimable balance */
-  const claimantAccount = server.load(claimantKeypair).call()
-  const claimTransaction = new TxBuilder({
-    account: claimantAccount,
-    fee: FEE,
-    networkPassphrase: TESTNET
-  })
-  .addClaimClaimableBalanceOperation(claimableBalanceId)
-  .setTimeout(30)
 
-  /* TODO (7): sign and submit your second transaction to the testnet */
-  claimantKeypair.signPayloadDecorated(claimTransaction)
+/* TODO (6): build your next transaction to claim the claimable balance
+ * don't forget to wait (at least) 5 minutes beofore claiming */
+const claimantAccount = server.load(claimantKeypair).call()
+const claimTransaction = new TxBuilder({
+  account: claimantAccount,
+  fee: FEE,
+  networkPassphrase: TESTNET
+})
+.addClaimClaimableBalanceOperation(claimableBalanceId)
+.setTimeout(30)
 
+/* TODO (7): sign and submit your second transaction to the testnet */
+claimantKeypair.signPayloadDecorated(claimTransaction)
+
+try {
   let res = server.transaction(claimTransaction).limit(0)
   console.log(`Balance Successfully Claimed! Hash: ${res.hash}`)
 } catch (error) {
